@@ -49,9 +49,10 @@ function contexto(r){
   $('#prog').textContent=r.need!=null?r.got+'/'+r.need:'';
 }
 window.addEventListener('message',ev=>{const d=ev.data||{};if(d.palko!=='resposta')return;
-  const p=pend[d.id];delete pend[d.id];contexto(d);
+  const p=pend[d.id];delete pend[d.id];const eraAbrir=!ctx||ctx.modo!=='artigos';contexto(d);
   if(p){mostrar(d,p.c);bip(d.k||'ok');}else if(d.t)mostrar(d);
   if(d.feito)setTimeout(voltar,1600);
+  else if(p&&eraAbrir&&d.k==='ok')setTimeout(voltar,900);   // abriu um pedido/PCA: volta ao PalKo (para ler os artigos, toque outra vez em 📷)
 });
 function enviar(tipo,c){
   if(!op||op.closed){mostrar({k:'bad',t:'O PalKo não está aberto',s:'Abra o leitor a partir do botão 📷 do PalKo.'});return;}
@@ -59,8 +60,11 @@ function enviar(tipo,c){
   try{op.postMessage({palko:tipo,id,c},'*');}catch(e){}
   setTimeout(()=>{if(pend[id]){delete pend[id];mostrar({k:'warn',t:'O PalKo não respondeu',s:'Toque em «Voltar ao PalKo» e veja se a leitura ficou registada.'},c);bip('warn');}},4000);
 }
-function voltar(){try{op&&op.focus&&op.focus();}catch(e){}window.close();
-  setTimeout(()=>mostrar({k:'warn',t:'Feche este separador para voltar ao PalKo',s:'O browser não deixou fechar sozinho.'}),400);}
+function voltar(){
+  try{const st=$('#v').srcObject;st&&st.getTracks().forEach(t=>t.stop());}catch(e){}
+  try{op&&op.focus&&op.focus();}catch(e){}
+  window.close();
+  setTimeout(()=>{if(!window.closed){history.length>1?history.back():mostrar({k:'warn',t:'Feche este separador para voltar ao PalKo',s:'Use o botão dos separadores do Chrome e escolha o PalKo.'});}},400);}
 $('#voltar').onclick=voltar;
 async function detetor(){
   if('BarcodeDetector' in window){try{const sup=await BarcodeDetector.getSupportedFormats();const f=FMT.filter(x=>sup.includes(x));if(f.length)return new BarcodeDetector({formats:f});}catch(e){}}
